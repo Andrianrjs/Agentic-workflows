@@ -3,3 +3,6 @@ venv/
 .env
 __pycache__/
 *.pyc.venv.nosync/
+train.csv
+test.csv
+model_training_pipeline.json

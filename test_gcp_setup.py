@@ -5,9 +5,9 @@ from google.cloud import aiplatform, storage
 # Charger les variables du fichier .env
 load_dotenv()
 
-PROJECT_ID = os.getenv("GCP_PROJECT_ID")
-REGION = os.getenv("GCP_REGION")
-BUCKET_NAME = os.getenv("GCP_BUCKET_NAME")
+PROJECT_ID = os.getenv("agentics-workflows-510809")
+REGION = os.getenv("europe-west1")
+BUCKET_NAME = os.getenv("clem-andrian-llmops")
 
 print("--- VERIFICATION DE LA CONFIGURATION GCP ---")
 print(f"Projet GCP : {PROJECT_ID}")
