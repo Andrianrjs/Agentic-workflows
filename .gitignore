@@ -1,8 +1,10 @@
 .venv
+.venv.nosync/
+.venv */
 venv/
 .env
 __pycache__/
-*.pyc.venv.nosync/
+*.pyc
 train.csv
 test.csv
-model_training_pipeline.json
+*_pipeline.json
