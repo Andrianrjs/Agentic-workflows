@@ -78,3 +78,12 @@ uv run python scripts/pipeline_runner.py
 ├── pyproject.toml / uv.lock      # Dependencies
 └── .env.example                  # Environment variables template
 ```
+
+
+## Results
+
+| Run | Epochs | train_loss | eval_loss | rouge_l | bleu | exact_match |
+| --- | --- | --- | --- | --- | --- | --- |
+| 2026-11-05 18:02 | 10 | 0.90 | 2.90 | 0.82 | 0.67 | 0.22 |
+
+TensorBoard: eval loss reaches its minimum around epoch 3, then increases (overfitting). 
