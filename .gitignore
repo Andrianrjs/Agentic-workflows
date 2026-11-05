@@ -11,3 +11,5 @@ test.csv
 local-test-run/
 phi3-yoda-adapter/
 logs/
+predictions_local_test.csv
+model_training_pipeline.json

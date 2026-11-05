@@ -21,6 +21,6 @@ job = aiplatform.PipelineJob(
     template_path=PIPELINE_FILE,
     pipeline_root=PIPELINE_ROOT,
     parameter_values={"raw_data_uri": RAW_DATA_URI},
-    enable_caching=False,
+    enable_caching=True,
 )
 job.submit()
