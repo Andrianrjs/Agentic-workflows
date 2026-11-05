@@ -8,3 +8,6 @@ __pycache__/
 train.csv
 test.csv
 *_pipeline.json
+local-test-run/
+phi3-yoda-adapter/
+logs/

@@ -6,16 +6,22 @@ readme = "README.md"
 authors = [
     { name = "andri", email = "rajesynyandrian@gmail.com" }
 ]
-requires-python = ">=3.11"
+requires-python = "==3.11.*"
 dependencies = [
-    "datasets>=5.1.0",
-    "gcsfs>=2026.8.2",
+    "accelerate>=1.15.0",
+    "datasets==3.*",
+    "gcsfs<=2025.3.0",
     "google-cloud-aiplatform>=2.4.0",
     "google-cloud-bigquery>=3.46.1",
     "google-cloud-storage>=3.16.0",
     "kfp>=2.16.1",
-    "pandas>=3.1.0",
+    "pandas==2.2.*",
+    "peft==0.13.2",
     "python-dotenv>=1.2.4",
+    "tensorboard>=2.21.0",
+    "torch>=2.15.0",
+    "transformers==4.46.*",
+    "trl==0.12.*",
 ]
 
 [project.scripts]
@@ -24,3 +30,8 @@ agentic-workflows = "agentic_workflows:main"
 [build-system]
 requires = ["uv_build>=0.12.23,<0.13.0"]
 build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.4.0",
+]
