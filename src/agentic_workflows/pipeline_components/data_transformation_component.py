@@ -29,8 +29,8 @@ def data_transformation_component(
     def to_messages(example):
         return {
             "messages": [
-                {"role": "user", "content": example["sentence"]},
-                {"role": "assistant", "content": example["translation_extra"]},
+                {"role": "user", "content": example["question"]},
+                {"role": "assistant", "content": example["poem"]},
             ]
         }
 
