@@ -11,6 +11,7 @@ from kfp.dsl import Dataset, Input, Metrics, Output, component
         "rouge-score==0.1.2",
         "sacrebleu==2.6.0",
         "rapidfuzz==3.14.6",
+        "pronouncing==0.2.0",  # Pronunciation dictionary used by the rhyme metric
     ],
 )
 def evaluation_component(
@@ -19,8 +20,10 @@ def evaluation_component(
     metrics: Output[Metrics],
 ):
     import logging
+    import re
 
     import pandas as pd
+    import pronouncing
     from ragas import SingleTurnSample
     from ragas.metrics import BleuScore, ExactMatch, NonLLMStringSimilarity, RougeScore
 
@@ -38,6 +41,27 @@ def evaluation_component(
         sample = SingleTurnSample(user_input=user_input, response=response, reference=reference)
         return {metric.name: metric.single_turn_score(sample) for metric in metric_definitions}
 
+    def last_word(line):
+        """Return the last word of a line, in lowercase, without punctuation."""
+        words = re.findall(r"[a-z']+", line.lower())
+        return words[-1] if words else ""
+
+    def words_rhyme(first, second):
+        """Check whether two words share the same ending sound."""
+        if not first or not second or first == second:
+            return False
+        first_parts = {pronouncing.rhyming_part(p) for p in pronouncing.phones_for_word(first)}
+        second_parts = {pronouncing.rhyming_part(p) for p in pronouncing.phones_for_word(second)}
+        return bool(first_parts & second_parts)
+
+    def rhyme_score(poem):
+        """Return the share of correct AABB rhymes, or 0 if the poem does not have 4 lines."""
+        lines = [line.strip() for line in str(poem).splitlines() if line.strip()]
+        if len(lines) != 4:
+            return 0.0
+        words = [last_word(line) for line in lines]
+        return (words_rhyme(words[0], words[1]) + words_rhyme(words[2], words[3])) / 2
+
     predictions_df = pd.read_csv(predictions.path)
     # An empty model answer is read as NaN by pandas, which ragas cannot score
     predictions_df["extracted_response"] = predictions_df["extracted_response"].fillna("").astype(str)
@@ -50,6 +74,13 @@ def evaluation_component(
         }
         for row in predictions_df.to_dict("records")
     ])
+
+    # Rhyme metric: ROUGE and BLEU cannot tell whether a poem rhymes
+    per_sample_metrics["rhyme_score"] = per_sample_metrics["extracted_response"].apply(rhyme_score)
+    rhyme_score_mean = float(per_sample_metrics["rhyme_score"].mean())
+    metrics.log_metric("rhyme_score_mean", rhyme_score_mean)
+    logger.info("rhyme_score_mean: %.4f", rhyme_score_mean)
+
     per_sample_metrics.to_csv(evaluation_results.path, index=False)
 
     for metric in metric_definitions:
