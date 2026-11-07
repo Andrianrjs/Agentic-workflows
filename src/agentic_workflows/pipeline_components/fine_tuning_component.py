@@ -92,7 +92,7 @@ def fine_tuning_component(
         learning_rate=learning_rate,
         per_device_train_batch_size=per_device_train_batch_size,
         max_seq_length=max_seq_length,
-        packing=True,
+        packing=False, # Keep each question/poem pair whole: packing would split pairs across blocks
         gradient_checkpointing=True,
         gradient_checkpointing_kwargs={"use_reentrant": False},
         optim="paged_adamw_8bit",
