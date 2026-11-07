@@ -98,7 +98,11 @@ def fine_tuning_component(
         optim="paged_adamw_8bit",
         logging_steps=10,
         eval_strategy="epoch",
-        save_strategy="no",
+        save_strategy="epoch",  # Save a checkpoint after each epoch
+        save_total_limit=1,  # Keep only the best checkpoint to limit disk usage
+        load_best_model_at_end=True,  # Eval loss rose after epoch 3 on Yoda: keep the best epoch, not the last one
+        metric_for_best_model="eval_loss",
+        greater_is_better=False,  # A lower validation loss is better
         report_to=["tensorboard"],
         logging_dir=metrics.path,  # TensorBoard logs saved with the Metrics artifact
         seed=seed,
