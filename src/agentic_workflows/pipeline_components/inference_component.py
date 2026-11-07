@@ -14,7 +14,7 @@ def inference_component(
     model: Input[Model],
     test_dataset: Input[Dataset],
     predictions: Output[Dataset],
-    max_new_tokens: int = 64,
+    max_new_tokens: int = 96,
 ):
     import json
     import logging

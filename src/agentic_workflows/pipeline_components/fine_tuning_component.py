@@ -25,7 +25,7 @@ def fine_tuning_component(
     num_train_epochs: int = 10,
     learning_rate: float = 3e-4,
     per_device_train_batch_size: int = 16,
-    max_seq_length: int = 64,
+    max_seq_length: int = 128,
     validation_size: float = 0.1,
     seed: int = 42,
 ):
