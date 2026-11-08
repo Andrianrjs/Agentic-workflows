@@ -95,3 +95,35 @@ uv run python scripts/pipeline_runner.py
 - ROUGE/BLEU/exact match are low on purpose: the model writes its own poem instead of copying the reference, so word overlap is not a good measure for this task.
 - Not measured yet: whether the poems are factually correct (planned with an LLM judge in session 5).
 
+### Sample outputs (rhyming run, 2026-11-08)
+
+Three poems from the test set, read by hand to check rhymes and facts.
+
+**"What did Abraham Lincoln do?"** · rhyme 1.0 · ROUGE-L 0.64
+
+> Abraham Lincoln was the sixteenth president of the United States,
+> Who led the country through the Civil War's fates;
+> He freed the slaves with the Emancipation Proclamation's might,
+> And gave the Gettysburg Address in a short, powerful flight.
+
+Facts are correct. Some words are only there to rhyme ("the Civil War's fates").
+
+**"Is Bitcoin real money?"** · rhyme 0.5 · ROUGE-L 0.25
+
+> Bitcoin is a digital currency without a bank,
+> People can send it without a paper or a rank;
+> It is not controlled by any government's hand,
+> But its value can change, as the market demands.
+
+Facts are correct, but line 2 is filler and the poem doesn't clearly answer the question. "hand / demands" rhymes to the ear but scores 0 because of the final "s": the rhyme score is strict.
+
+**"Why do museums exist?"** · rhyme 1.0 · ROUGE-L 0.22
+
+> Museums collect and display objects of art and history,
+> From ancient statues to paintings of great mystery;
+> They help us learn about people and places far away,
+> And protect them so future generations can see them one day.
+
+The best of the three: correct rhymes, and it actually answers "why". Yet it has the lowest ROUGE-L, which shows that word overlap with the reference is not a good measure of quality here.
+
+**Takeaways:** all three are factually correct; the main weakness is filler words chosen for the rhyme; the rhyme score slightly underestimates the model.
