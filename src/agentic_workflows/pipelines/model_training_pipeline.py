@@ -14,7 +14,7 @@ from agentic_workflows.pipeline_components.evaluation_component import (
     evaluation_component,
 )
 
-@dsl.pipeline(name="yoda-model-training-pipeline")
+@dsl.pipeline(name="rhyming-model-training-pipeline")
 def model_training_pipeline(raw_data_uri: str, test_size: float = 0.2):
     data_task = data_transformation_component(raw_data_uri=raw_data_uri, test_size=test_size)
 

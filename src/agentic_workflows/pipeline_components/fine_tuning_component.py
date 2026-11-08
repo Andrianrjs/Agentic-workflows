@@ -25,7 +25,7 @@ def fine_tuning_component(
     num_train_epochs: int = 10,
     learning_rate: float = 3e-4,
     per_device_train_batch_size: int = 16,
-    max_seq_length: int = 64,
+    max_seq_length: int = 128,
     validation_size: float = 0.1,
     seed: int = 42,
 ):
@@ -92,13 +92,17 @@ def fine_tuning_component(
         learning_rate=learning_rate,
         per_device_train_batch_size=per_device_train_batch_size,
         max_seq_length=max_seq_length,
-        packing=True,
+        packing=False, # Keep each question/poem pair whole: packing would split pairs across blocks
         gradient_checkpointing=True,
         gradient_checkpointing_kwargs={"use_reentrant": False},
         optim="paged_adamw_8bit",
         logging_steps=10,
         eval_strategy="epoch",
-        save_strategy="no",
+        save_strategy="epoch",  # Save a checkpoint after each epoch
+        save_total_limit=1,  # Keep only the best checkpoint to limit disk usage
+        load_best_model_at_end=True,  # Eval loss rose after epoch 3 on Yoda: keep the best epoch, not the last one
+        metric_for_best_model="eval_loss",
+        greater_is_better=False,  # A lower validation loss is better
         report_to=["tensorboard"],
         logging_dir=metrics.path,  # TensorBoard logs saved with the Metrics artifact
         seed=seed,

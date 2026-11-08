@@ -17,7 +17,7 @@ compiler.Compiler().compile(model_training_pipeline, PIPELINE_FILE)
 aiplatform.init(project=PROJECT_ID, location=REGION, staging_bucket=f"gs://{BUCKET_NAME}")
 
 job = aiplatform.PipelineJob(
-    display_name="yoda-model-training-pipeline",
+    display_name="rhyming-model-training-pipeline",
     template_path=PIPELINE_FILE,
     pipeline_root=PIPELINE_ROOT,
     parameter_values={"raw_data_uri": RAW_DATA_URI},
