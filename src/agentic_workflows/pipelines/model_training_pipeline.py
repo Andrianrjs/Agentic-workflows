@@ -20,6 +20,7 @@ def model_training_pipeline(raw_data_uri: str, test_size: float = 0.2):
 
     fine_tuning_task = fine_tuning_component(
         train_dataset=data_task.outputs["train_dataset_path"],
+        num_train_epochs=5,
     )
     fine_tuning_task.set_accelerator_type("NVIDIA_TESLA_T4")
     fine_tuning_task.set_accelerator_limit(1)
