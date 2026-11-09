@@ -9,3 +9,6 @@ BUCKET_NAME = os.getenv("GCP_BUCKET_NAME")
 
 RAW_DATA_URI = f"gs://{BUCKET_NAME}/rhyming_qa_700.csv"
 PIPELINE_ROOT = f"gs://{BUCKET_NAME}/pipeline_root"
+
+PROJECT_NUMBER = os.getenv("GCP_PROJECT_NUMBER")
+ENDPOINT_ID = os.getenv("GCP_ENDPOINT_ID")

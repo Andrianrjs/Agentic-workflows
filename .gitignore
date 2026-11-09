@@ -15,3 +15,4 @@ predictions_local_test.csv
 model_training_pipeline.json
 *.safetensors
 *.bin
+.files

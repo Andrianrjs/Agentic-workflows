@@ -1,0 +1,10 @@
+{
+    "instances": [
+        {
+            "prompt": "<|user|>\nWhy is the sky blue?<|end|>\n<|assistant|>\n"
+        }
+    ],
+    "parameters": {
+        "max_new_tokens": 96
+    }
+}
