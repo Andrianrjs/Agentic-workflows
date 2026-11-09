@@ -127,3 +127,10 @@ Facts are correct, but line 2 is filler and the poem doesn't clearly answer the 
 The best of the three: correct rhymes, and it actually answers "why". Yet it has the lowest ROUGE-L, which shows that word overlap with the reference is not a good measure of quality here.
 
 **Takeaways:** all three are factually correct; the main weakness is filler words chosen for the rhyme; the rhyme score slightly underestimates the model.
+
+
+## Model Registry
+
+| Model | Version | Resource name | Trained by run |
+|---|---|---|---|
+| rhyming-phi3 | 1 | `projects/123905721265/locations/europe-west2/models/2406050299945943040` | rhyming-model-training-pipeline-20261108191541 |
