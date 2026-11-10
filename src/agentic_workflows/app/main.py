@@ -1,4 +1,5 @@
 import subprocess
+import shutil
 
 import chainlit as cl
 import requests
@@ -24,8 +25,9 @@ def build_prompt(question: str) -> str:
 
 def get_access_token() -> str:
     """Get a short-lived access token from the logged-in gcloud account."""
-    return subprocess.check_output(["gcloud", "auth", "print-access-token"], text=True).strip()
-
+    # shutil.which finds gcloud.cmd on Windows, where subprocess cannot find it by name alone.
+    gcloud = shutil.which("gcloud") or "gcloud"
+    return subprocess.check_output([gcloud, "auth", "print-access-token"], text=True).strip()
 
 @observe(name="rhyming-poem")
 def get_poem(message: cl.Message) -> str:
