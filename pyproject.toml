@@ -17,6 +17,7 @@ dependencies = [
     "google-cloud-storage>=3.16.0",
     "kfp>=2.16.1",
     "langchain-community==0.3.*",
+    "langfuse>=3,<4",
     "pandas==2.2.*",
     "peft==0.13.2",
     "pronouncing==0.2.0",
