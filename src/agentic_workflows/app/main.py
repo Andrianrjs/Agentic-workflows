@@ -15,7 +15,7 @@ GENERATION_PARAMETERS = {"max_new_tokens": 96, "do_sample": False}
 
 # Langfuse reads the LANGFUSE_* variables loaded from .env by constants.py.
 # Chainlit's own OpenTelemetry traces are blocked so that only our traces are logged.
-langfuse = Langfuse(blocked_instrumentation_scopes=["chainlit"])
+langfuse = Langfuse(blocked_instrumentation_scopes=["chainlit", "fastapi"])
 
 
 def build_prompt(question: str) -> str:
