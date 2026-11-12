@@ -83,6 +83,7 @@ uv run python scripts/pipeline_runner.py
 │   ├── test_component_locally.py # Run a component locally
 │   ├── pipeline_runner.py        # Compile and submit to Vertex AI
 │   └── register_model_with_custom_handler.py  # Upload handler + register model
+├── docs/langfuse/                # Langfuse dashboard screenshots (session 5)
 ├── sample_request.json           # Example prediction request
 ├── session*_practice.md          # Practice instructions
 ├── pyproject.toml / uv.lock      # Dependencies
@@ -102,7 +103,7 @@ uv run python scripts/pipeline_runner.py
 - **Yoda run:** clear overfitting (eval_loss went back up after epoch ~3, see TensorBoard). Fixed by keeping the best checkpoint (`load_best_model_at_end`) and reducing to 5 epochs.
 - **Rhyming run:** the rhyme score went from 0.25 (Colab test, 100 pairs) to 0.62 with 700 pairs, so more data clearly helped.
 - ROUGE/BLEU/exact match are low on purpose: the model writes its own poem instead of copying the reference, so word overlap is not a good measure for this task.
-- Not measured yet: whether the poems are factually correct (planned with an LLM judge in session 5).
+- Factual correctness is not measured by the pipeline: it is measured on live conversations with an LLM judge in session 5 (average 0.80, see [Monitoring with Langfuse](#monitoring-with-langfuse)).
 
 ### Sample outputs (rhyming run, 2026-11-08)
 
@@ -180,6 +181,108 @@ Then open http://localhost:8000.
 
 
 
+
+## Monitoring with Langfuse
+
+Session 5: every conversation of the Chainlit app is traced in a self-hosted [Langfuse](https://langfuse.com), scored by two LLM-as-a-judge evaluators, and summarised in a monitoring dashboard.
+
+### Run Langfuse locally
+
+Langfuse runs with Docker Compose, outside this repository:
+
+```
+git clone https://github.com/langfuse/langfuse.git
+cd langfuse
+docker compose up -d
+```
+
+Open http://localhost:3000, create an organization and a project, then create an API key in the project settings and add it to `.env` (see `.env.example`):
+
+```
+LANGFUSE_SECRET_KEY=sk-lf-...
+LANGFUSE_PUBLIC_KEY=pk-lf-...
+LANGFUSE_BASE_URL=http://localhost:3000
+```
+
+Then start the chat app as described in [Chat app](#chat-app): each message appears in the **Tracing** tab.
+
+### What is logged
+
+`src/agentic_workflows/app/main.py` creates one trace per user message:
+
+| Observation | Type | Input | Output | Other data |
+|---|---|---|---|---|
+| `rhyming-poem` | span (`@observe`) | the user's question | the poem shown in the chat | |
+| `vertex-endpoint-call` | generation, nested in the span | the request sent to the endpoint (Phi-3 chat template + generation parameters) | the raw Vertex AI response | model name and version (`modelDisplayName`, `modelVersionId`), endpoint ID, generation parameters, latency |
+
+The `chainlit` and `fastapi` instrumentation scopes are blocked (`blocked_instrumentation_scopes`), so the technical spans of the web server (`GET /user`, `fastapi.endpoint`...) are not sent to Langfuse.
+
+### LLM-as-a-judge evaluators
+
+Both judges run on Gemini (`gemini-3.5-flash-lite`, Google AI Studio free tier), on every observation named `rhyming-poem` (100% sampling), and return a score between 0 and 1 with a short explanation. Their prompts use few-shot examples and the `{{input}}` / `{{output}}` variables.
+
+| Evaluator | What it checks | 1 | 0.5 | 0 |
+|---|---|---|---|---|
+| `rhyme-quality` | the form: an English quatrain with an AABB rhyme scheme | 4 lines, both pairs rhyme | one pair rhymes, or wrong number of lines | not a poem, or no rhyme |
+| `factual-correctness` | the facts stated in the poem, ignoring the form | correct and answers the question | partly correct or does not really answer | false or invented fact |
+
+### Results (44 test conversations, 2026-11-10)
+
+The endpoint was deployed for about one hour and 44 varied questions were asked in Chainlit (factual questions, false-premise questions, a question in French, a greeting, a request for a haiku...).
+
+| Metric | Value |
+|---|---|
+| Conversations | 44 |
+| `rhyme-quality` | average **0.65** (20 scores at 1, 17 at 0.5, 7 at 0) |
+| `factual-correctness` | average **0.80** (31 scores at 1, 8 at 0.5, 5 at 0) |
+| Endpoint latency | average 4.35 s, p95 5.3 s (n1-standard-8 + 1 × T4) |
+| Errors | 0 |
+
+- The LLM judge (0.65) and the pipeline's dictionary-based rhyme score on the test set (0.62) agree: the model rhymes correctly about two times out of three.
+- The model is mostly factually right (0.80), but it tends to follow the premise of the question instead of correcting it.
+- The conversations are dated 2026-11-10 and the scores 2026-11-11: the judges were run on the existing traces afterwards (see problems below). With the current setup, new conversations are scored about a minute after they arrive.
+
+### Examples
+
+| Question | Answer (excerpt) | Rhyme | Facts | Judge's explanation (excerpt) |
+|---|---|---|---|---|
+| What is machine learning, in simple terms? | *Machine learning is a way for computers to learn, / From data and examples, without being stern; ...* | 1 | 1 | Both pairs rhyme (learn/stern, own/known); correct simple definition. |
+| Why is the Great Wall of China visible from space? | *... It stretches for thousands of kilometers in length, / And can be seen from space, though it is not strong.* | 0.5 | **0** | "The answer claims that the Great Wall of China can be seen from space, which is a common myth." |
+| Why did Einstein win the Nobel Prize for his theory of relativity? | *Albert Einstein developed the theory of relativity, / Which changed how we understand space and time's reality; ...* | 1 | **0** | Einstein did not win the Nobel Prize for relativity (it was for the photoelectric effect). |
+| What is the capital of Australia, Sydney? | *Sydney is Australia's largest city, by the sea, / With the Opera House and Harbour Bridge to see; ...* | 1 | 0.5 | Correct facts about Sydney, but the false premise (the capital is Canberra) is not corrected. |
+| Can you write me a haiku about the sea? | *The sea is deep and wide, / With waves that crash and tides that ride; / It holds secrets in its blue.* | 0.5 | 0.5 | Only three lines instead of a quatrain, and not a real haiku either. |
+| Hello! | *A greeting is a friendly word or phrase, / Like hello or hi, to make someone's day; ...* | **0** | 1 | "phrase/day and meet/be do not form an AABB rhyme scheme". The model explains what a greeting is instead of greeting back. |
+
+### Dashboard
+
+The **Rhyming poems monitoring** dashboard (period: past 7 days) follows the course's metric families: model quality (LLM judges) and operational metrics (volume, latency, errors, model version).
+
+| | |
+|---|---|
+| ![Scores](docs/langfuse/01_scores_card.png) | ![Average judge scores over time](docs/langfuse/02_average_judge_scores_over_time.png) |
+| ![Judge score distribution](docs/langfuse/03_judge_score_distribution.png) | ![Failed answers per judge](docs/langfuse/04_failed_answers_per_judge.png) |
+| ![Conversations over time](docs/langfuse/05_conversations_over_time.png) | ![Model response time](docs/langfuse/06_model_response_time.png) |
+| ![Model response time p95](docs/langfuse/07_model_response_time_p95.png) | ![Response time distribution](docs/langfuse/08_response_time_distribution.png) |
+| ![Errors over time](docs/langfuse/09_errors_over_time.png) | ![Endpoint calls by model version](docs/langfuse/10_endpoint_calls_by_model_version.png) |
+
+With a single test session, the time series only have one point; in production they would show a drop in quality or a rise in latency immediately.
+
+### Problems encountered and changes made
+
+| Problem | Cause | Change |
+|---|---|---|
+| Langfuse filled with `GET /user`, `fastapi.endpoint`... traces, and the judges scored them | FastAPI (0.162) now emits its own OpenTelemetry spans under the `fastapi` scope; blocking `chainlit` was not enough | Added `"fastapi"` to `blocked_instrumentation_scopes` |
+| The judges never scored the conversations | The default rule filter `isRootObservation = true` excluded them: `rhyming-poem` is nested under a web-server span | Rule filter changed to `name = rhyming-poem` |
+| Most judge calls failed (evaluator status FAILING) | Gemini free tier: 15 requests per minute, and 88 requests were sent at once | Existing traces re-scored in batches of 10 conversations, one judge at a time; live traffic stays far below the limit |
+| `gemini-2.5-flash` rejected when creating the LLM connection | Model no longer available to new users | Switched to `gemini-3.5-flash-lite` |
+| Chainlit could not get a Google access token on Windows | `subprocess` cannot find `gcloud.cmd` by name | `shutil.which("gcloud")` in `get_access_token` |
+| Bar charts were misleading (axes starting at 5, 10 or 38) | Automatic y-axis scaling in Langfuse | Pivot tables and a horizontal bar chart starting at 0 |
+
+### Limitations
+
+- The judges are LLMs too: their scores are useful to spot big problems and regressions, but a sample should still be checked by hand (course, session 5). For example, on "Who is Andrian?" the model describes the name rather than the person, and the judge accepts it.
+- No user feedback is collected (no thumbs up/down in Chainlit), so the course's third metric family (user satisfaction) is not covered.
+- Token usage and cost are not logged, because the custom `handler.py` does not return token counts.
 
 ## Model Registry
 
